@@ -8,25 +8,22 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.DialogFragment
-import androidx.wear.compose.materialcore.is24HourFormat
-import com.example.soal_uts_bug_fixing.databinding.ActivityAppointmentBinding
-import com.example.soal_uts_bug_fixing.databinding.ActivityFormBinding
 import android.text.format.DateFormat
 import android.view.View
-import android.widget.RadioButton
+import android.widget.DatePicker
+import android.widget.TimePicker
+import com.example.soal_uts_bug_fixing.databinding.ActivityAppointmentBinding
 import com.example.soal_uts_bug_fixing.databinding.DialogExitBinding
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
-class AppointmentActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, TimePickerDialog.OnTimeSetListener, DialogExit.DialogListener
-{
+class AppointmentActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, TimePickerDialog.OnTimeSetListener, DialogExit.DialogListener {
     private lateinit var binding: ActivityAppointmentBinding
 
-    companion object{
+    companion object {
         const val EXTRA_TELEFON = "extra_phone"
         const val EXTRA_ALAMAT = "extra_alamat"
         const val EXTRA_TIPE = "extra_tipe"
@@ -34,9 +31,9 @@ class AppointmentActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListe
         const val EXTRA_WAKTU = "extra_waktu"
     }
 
-    private lateinit var dateInput : String
-    private lateinit var timeInput : String
-    private lateinit var tipePertemuan : String
+    private lateinit var dateInput: String
+    private lateinit var timeInput: String
+    private lateinit var tipePertemuan: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,31 +42,30 @@ class AppointmentActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListe
 
         dateInput = ""
         timeInput = ""
-        tipePertemuan =""
+        tipePertemuan = ""
 
-        with(binding){
-
-            tombolKalender.setOnClickListener {
+        with(binding) {
+            // diubah sesuai button nya di xml
+            kalenderTxt.setOnClickListener {
                 val datePicker = DatePicker()
                 datePicker.show(supportFragmentManager, "datePicker")
             }
 
-            tombolJam.setOnClickListener {
+            timerTxt.setOnClickListener {
                 val timePicker = TimePicker()
                 timePicker.show(supportFragmentManager, "timePicker")
             }
 
-            tombolSubmit.setOnClickListener {
-                if(fieldNotEmpty()){
+            submitBtn.setOnClickListener {
+                if (fieldNotEmpty()) {
                     val dialog = DialogExit()
-                    //
-                }else{
+                    dialog.show(supportFragmentManager, "DialogExit")
+                } else {
                     Toast.makeText(this@AppointmentActivity, "MASIH ADA KOLOM YANG KOSONG", Toast.LENGTH_SHORT).show()
                 }
             }
 
-
-            radioGroup.setOnCheckedChangeListener { group, checkedId ->
+            radioGroup.setOnCheckedChangeListener { _, checkedId ->
                 when (checkedId) {
                     R.id.radioButton1 -> {
                         tipePertemuan = radioButton1.text.toString()
@@ -78,107 +74,103 @@ class AppointmentActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListe
                         tipePertemuan = radioButton2.text.toString()
                     }
                 }
-                if(tipePertemuan=="Online"){
-                    inputLayout.visibility = View.GONE
-                }else{
-                    inputLayout.visibility = View.VISIBLE
-                }
+                inputLayout.visibility = if (tipePertemuan == "Online") View.GONE else View.VISIBLE
             }
-
         }
-
     }
 
+    // mengubah ini
+    override fun onDateSet(view: DatePicker?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.YEAR, year)
+        calendar.set(Calendar.MONTH, monthOfYear)
+        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
 
-    override fun onDateSet(p0: android.widget.DatePicker?, day: Int, month: Int, year:
-    Int) {
-        //
+        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        dateInput = dateFormat.format(calendar.time)
+        binding.kalenderTxt.text = dateInput
     }
 
-    override fun onTimeSet(p0: android.widget.TimePicker?, hour: Int, menit:Int) {
-        timeInput = String.format("%02d:%02d", hour, minute)
+    override fun onTimeSet(view: TimePicker?, hourOfDay: Int, minute: Int) {
+        timeInput = String.format("%02d:%02d", hourOfDay, minute)
         binding.timerTxt.text = timeInput
     }
 
-
-//  AKSI SETELAH KONFIRMASI DIALOG BOX
+    // mengubah result ini
     override fun onDialogResult(result: Boolean) {
         val nama = intent.getStringExtra(FormActivity.EXTRA_NAMA)
         val identitas = intent.getStringExtra(FormActivity.EXTRA_IDENTITAS)
         val gender = intent.getStringExtra(FormActivity.EXTRA_GENDER)
 
-            if (result) {
-                val intentToResult = Intent(this@AppointmentActivity, ResultActivity::class.java)
-                intentToResult.putExtra(EXTRA_TELEFON, binding.kontakEdt.text.toString())
-                intentToResult.putExtra(EXTRA_TANGGAL, binding.kalenderTxt.text.toString())
-                (EXTRA_WAKTU, binding.timerTxt.text.toString())
-                (EXTRA_TIPE, tipePertemuan)
-
-                intentToResult.putExtra(FormActivity.EXTRA_NAMA, nama)
-                intentToResult.putExtra(FormActivity.EXTRA_IDENTITAS, identitas)
-                intentToResult.putExtra(FormActivity.EXTRA_GENDER, gender)
-
-                if(tipePertemuan=="Offline"){
-                    intentToResult.putExtra(EXTRA_ALAMAT, binding.lokasiEdt.text.toString())
+        if (result) {
+            val intentToResult = Intent(this@AppointmentActivity, ResultActivity::class.java).apply {
+                putExtra(EXTRA_TELEFON, binding.kontakEdt.text.toString())
+                putExtra(EXTRA_TANGGAL, binding.kalenderTxt.text.toString())
+                putExtra(EXTRA_WAKTU, binding.timerTxt.text.toString())
+                putExtra(EXTRA_TIPE, tipePertemuan)
+                putExtra(FormActivity.EXTRA_NAMA, nama)
+                putExtra(FormActivity.EXTRA_IDENTITAS, identitas)
+                putExtra(FormActivity.EXTRA_GENDER, gender)
+                if (tipePertemuan == "Offline") {
+                    putExtra(EXTRA_ALAMAT, binding.lokasiEdt.text.toString())
                 }
-                startActivity(intentToResult)
             }
-    }
-
-    fun fieldNotEmpty(): Boolean {
-        with(binding){
-            if(kontakEdt.text.toString()!="" && tipePertemuan!="" && timeInput!="" && dateInput!=""){
-                if(tipePertemuan=="Offline"){
-                    if(lokasiEdt.text.toString()!=""){
-                        return true
-                    }else{
-                        return false
-                    }
-                }else{
-                    return true
-                }
-            }else{
-                return false
-            }
+            startActivity(intentToResult)
         }
     }
 
+    private fun fieldNotEmpty(): Boolean {
+        with(binding) {
+            if (kontakEdt.text.toString().isNotEmpty() && tipePertemuan.isNotEmpty() && timeInput.isNotEmpty() && dateInput.isNotEmpty()) {
+                return if (tipePertemuan == "Offline") lokasiEdt.text.toString().isNotEmpty() else true
+            }
+            return false
+        }
+    }
 }
 
-class DatePicker: DialogFragment() {
+
+// mengisi date picker
+class DatePicker : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val calendar = Calendar.getInstance()
-        //
-        //
-        //
-        return DatePickerDialog(
-            requireActivity(),
-            activity as DatePickerDialog.OnDateSetListener,
-            year,
-            monthOfYear,
-            dayOfMonth
+        val c = Calendar.getInstance()
+        val year = c.get(Calendar.YEAR)
+        val month = c.get(Calendar.MONTH)
+        val day = c.get(Calendar.DAY_OF_MONTH)
+        return DatePickerDialog(requireActivity(), activity as DatePickerDialog.OnDateSetListener, year, month, day)
+    }
+}
+
+
+// mengisi date picker
+class TimePicker : DialogFragment() {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val c = Calendar.getInstance()
+        val hour = c.get(Calendar.HOUR_OF_DAY)
+        val minute = c.get(Calendar.MINUTE)
+
+        return TimePickerDialog(
+            activity,
+            activity as TimePickerDialog.OnTimeSetListener,
+            hour,
+            minute,
+            DateFormat.is24HourFormat(activity)
         )
     }
 }
 
-class TimePicker: DialogFragment() {
-//
-}
-
+// exit dialog
 class DialogExit : DialogFragment() {
-
     interface DialogListener {
         fun onDialogResult(result: Boolean)
     }
+
     private lateinit var listener: DialogListener
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        try {
-            listener = context as DialogListener
-        } catch (e: ClassCastException) {
-            throw ClassCastException("$context must implement DialogListener")
-        }
+        listener = context as? DialogListener
+            ?: throw ClassCastException("$context must implement DialogListener")
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
