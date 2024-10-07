@@ -29,6 +29,8 @@ class ResultActivity : AppCompatActivity() {
             identitasTxt.text = identitas
             genderTxt.text = gender
             tipeTxt.text = tipe
+            tanggalTxt.text = tanggal
+            waktuTxt.text = waktu
 
             if (tipe == "Offline") {
                 lokasiTitle.visibility = View.VISIBLE
